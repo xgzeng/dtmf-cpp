@@ -42,6 +42,14 @@ swap32(uint32_t a)
     return (b1 << 24) + (b2 << 16) + (b3 << 8) + b4;
 }
 
+void swap16_inplace(uint16_t& a) {
+  a = ((a & 0x00FF) << 8) | ((a & 0xFF00) >> 8);
+}
+
+void swap16_inplace(int16_t& a) {
+  a = ((a & 0x00FF) << 8) | ((a & 0xFF00) >> 8);
+}
+
 struct au_header
 {
     uint32_t magic;
@@ -87,11 +95,14 @@ main(int argc, char **argv)
     // possible, this example does not support them, since they are relatively
     // rare.
     //
+    bool swap_endian = false;
     if (header.magic == AU_MAGIC)
     {
+      swap_endian = false;
     }
     else if (header.magic == swap32(AU_MAGIC))
     {
+        swap_endian = true;
         header.header_size = swap32(header.header_size);
         header.nsamples = swap32(header.nsamples);
         header.encoding = swap32(header.encoding);
@@ -115,9 +126,7 @@ main(int argc, char **argv)
     //
     if 
     (
-        header.header_size != 24
-        ||
-        header.encoding != 2
+        (header.encoding != 2 && header.encoding != 3)
         ||
         header.sample_rate != 8000
         ||
@@ -127,20 +136,32 @@ main(int argc, char **argv)
         cerr << argv[1] << ": unsupported AU format" << endl;
         return 1;
     }
+    
+    fin.seekg(header.header_size);
 
-    char cbuf[BUFLEN];
-    short sbuf[BUFLEN];
+    int16_t sbuf[BUFLEN];
     DtmfDetector detector(BUFLEN);
     for (uint32_t i = 0; i < header.nsamples; i += BUFLEN)
     {
-        fin.read(cbuf, BUFLEN);
-        //
-        // Promote our 8-bit samples to 16 bits, since that's what the detector
-        // expects.  Shift them left during promotion, since the decoder won't
-        // pick them up otherwise (volume too low).
-        //
-        for (int j = 0; j < BUFLEN; ++j)
-            sbuf[j] = cbuf[j] << 8;
+        if (header.encoding == 2) {
+          char cbuf[BUFLEN];
+          fin.read(cbuf, BUFLEN);
+          //
+          // Promote our 8-bit samples to 16 bits, since that's what the detector
+          // expects.  Shift them left during promotion, since the decoder won't
+          // pick them up otherwise (volume too low).
+          //
+          for (int j = 0; j < BUFLEN; ++j)
+              sbuf[j] = cbuf[j] << 8;
+        } else {
+          fin.read((char*)sbuf, BUFLEN * sizeof(int16_t));
+          if (swap_endian) {
+            for (int j = 0; j < BUFLEN; ++j) {
+              swap16_inplace(sbuf[j]);
+            }
+          }
+        }
+        
         detector.zerosIndexDialButton();
         detector.dtmfDetecting(sbuf);
         cout << i << ": `" << detector.getDialButtonsArray() << "'" << endl;
