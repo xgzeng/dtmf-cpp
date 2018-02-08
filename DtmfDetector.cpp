@@ -204,7 +204,6 @@ DtmfDetector::DtmfDetector(INT32 frameSize_): frameSize(frameSize_)
 
     frameCount = 0;
     prevDialButton = ' ';
-    permissionFlag = 0;
 }
 //---------------------------------------------------------------------
 DtmfDetector::~DtmfDetector()
@@ -240,36 +239,7 @@ void DtmfDetector::dtmfDetecting(const INT16 input_array[])
         // Determine if we should register it as a new tone, or
         // ignore it as a continuation of a previously 
         // registered tone.  
-        //
-        // This seems buggy.  Consider a sequence of three
-        // tones, with each tone corresponding to the dominant
-        // tone in a batch of SAMPLES samples:
-        //
-        // SILENCE TONE_A TONE_B will get registered as TONE_B
-        //
-        // TONE_A will be ignored.
-#if 0
-        if(permissionFlag)
-        {
-            if(temp_dial_button != ' ')
-            {
-                dialButtons[indexForDialButtons++] = temp_dial_button;
-                // NUL-terminate the string.
-                dialButtons[indexForDialButtons] = 0;
-                // If we've gone out of bounds, wrap around.
-                if(indexForDialButtons >= 64)
-                    indexForDialButtons = 0;
-            }
-            permissionFlag = 0;
-        }
 
-        // If we've gone from silence to a tone, set the flag.
-        // The tone will be registered in the next iteration.
-        if((temp_dial_button != ' ') && (prevDialButton == ' '))
-        {
-            permissionFlag = 1;
-        }
-#endif
         if (temp_dial_button != prevDialButton) {
             if (temp_dial_button != ' ') dialButtons[indexForDialButtons++] = temp_dial_button;
             // NUL-terminate the string.

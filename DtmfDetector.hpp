@@ -71,21 +71,6 @@ protected:
     INT32 frameCount;
     // The tone detected by the previous call to DTMF_detection.
     char prevDialButton;
-    // This flag is used to aggregate adjacent tones and spaces, i.e.
-    //
-    // 111111   222222 -> 12 (where a space represents silence)
-    //
-    // 1 means that during the previous iteration, we entered a tone 
-    // (gone from silence to non-silence).
-    // 0 means otherwise.
-    //
-    // While this is a member variable, it can by all means be a local
-    // variable in dtmfDetecting.
-    //
-    // N.B. seems to not work.  In practice, you get this:
-    //
-    // 111111   222222 -> 1111122222
-    char permissionFlag;
 
 public:
 
