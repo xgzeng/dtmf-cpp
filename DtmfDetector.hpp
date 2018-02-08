@@ -8,7 +8,7 @@
 #ifndef DTMF_DETECTOR
 #define DTMF_DETECTOR
 
-#include <cstdint>
+#include <stdint.h>
 #include <string>
 
 const int DTMF_DETECTION_BATCH_SIZE = 102;

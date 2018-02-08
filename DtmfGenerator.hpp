@@ -7,7 +7,7 @@
 #ifndef _DTMF_GENERATOR_
 #define _DTMF_GENERATOR_
 
-#include <cstdint>
+#include <stdint.h>
 
 // Class DtmfGenerator is used for generating of DTMF
 // frequences, corresponding push buttons.
