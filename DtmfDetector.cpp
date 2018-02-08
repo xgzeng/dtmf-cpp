@@ -195,13 +195,13 @@ const int32_t SAMPLES = 102;
 static char DTMF_detection(const int16_t short_array_samples[]);
 
 //--------------------------------------------------------------------
-DtmfDetector::DtmfDetector(int32_t frameSize_): frameSize(frameSize_)
+DtmfDetector::DtmfDetector()
 {
     // 
     // This array is padded to keep the last batch, which is smaller
     // than SAMPLES, from the previous call to dtmfDetecting.
     //
-    pArraySamples = new int16_t [frameSize + SAMPLES];
+    pArraySamples = new int16_t [SAMPLES];
 
     frameCount = 0;
     prevDialButton = ' ';
@@ -212,52 +212,44 @@ DtmfDetector::~DtmfDetector()
     delete [] pArraySamples;
 }
 
-void DtmfDetector::dtmfDetecting(const int16_t input_array[])
+void DtmfDetector::dtmfDetecting(const int16_t *samples, int sample_count)
 {
-    // Copy the input array into the middle of pArraySamples.
-    // I think the first frameCount samples contain the last batch from the
-    // previous call to this function.
-
-    //if (frameCount != 0) {
-    //  std::copy
-    //}
-
-    for(int ii=0; ii < frameSize; ii++)
-    {
-        pArraySamples[ii + frameCount] = input_array[ii];
+    if (frameCount != 0) {
+        // Copy the input array into the back of pArraySamples.
+        int count_to_copy = std::min(sample_count, SAMPLES - frameCount);
+        std::copy(samples, samples + count_to_copy, pArraySamples + frameCount);
+        frameCount += count_to_copy;
+        samples += count_to_copy;
+        sample_count -= count_to_copy;
+        if (sample_count < SAMPLES) {
+          return;
+        }
     }
 
-    frameCount += frameSize;
-    
-    // If don't have enough samples to process an entire batch, then don't
-    // do anything.
-    if(frameCount < SAMPLES) return;
-    
-    // Read index into pArraySamples that corresponds to the current batch.
-    uint32_t temp_index = 0;
-    // Process samples while we still have enough for an entire
-    // batch.
-    while(frameCount >= SAMPLES)
+    // process batch samples in buffer
+    if (frameCount == SAMPLES) {
+        char dial_char = DTMF_detection(pArraySamples);
+        OnDetectedTone(dial_char);
+        frameCount = 0;
+    }
+
+    // process samples in input data directory
+    while (sample_count >= SAMPLES)
     {
         // Determine the tone present in the current batch
-        char dial_char = DTMF_detection(&pArraySamples[temp_index]);
+        char dial_char = DTMF_detection(samples);
         OnDetectedTone(dial_char);
 
-        temp_index += SAMPLES;
-        frameCount -= SAMPLES;
+        samples += SAMPLES;
+        sample_count -= SAMPLES;
     }
 
-    //
-    // We have frameCount samples left to process, but it's not
-    // enough for an entire batch.  Shift these left-over
-    // samples to the beginning of our array and deal with them
+    // We have sample_count samples left to process, but it's not enough for an entire batch. 
+    // Store the samples to the buffer and deal with them
     // next time this function is called.
-    //
-    for(int i = 0; i < frameCount; i++)
-    {
-        pArraySamples[i] = pArraySamples[i + temp_index];
-    }
-
+    assert(frameCount == 0 && sample_count < SAMPLES);
+    std::copy(samples, samples + sample_count, pArraySamples);
+    frameCount = sample_count;
 }
 
 void DtmfDetector::OnDetectedTone(char dial_char) {

@@ -52,28 +52,26 @@ public:
 
 class DtmfDetector : public DtmfDetectorInterface
 {
-protected:
+private:
     // This array keeps the entire buffer PLUS a single batch.
     int16_t *pArraySamples;
-    // The size of the entire buffer used for processing samples.  
-    // Specified at construction time.
-    const int32_t frameSize; //Size of a frame is measured in INT16(word)
 
     // This gets used for a variety of purposes.  Most notably, it indicates
     // the start of the circular buffer at the start of ::dtmfDetecting.
     int32_t frameCount;
+
     // The tone detected by the previous call to DTMF_detection.
     char prevDialButton;
+
+protected:
 
     virtual void OnDetectedTone(char dial_char);
 
 public:
-
-    // frameSize_ - input frame size
-    DtmfDetector(int32_t frameSize_);
+    DtmfDetector();
     ~DtmfDetector();
 
-    void dtmfDetecting(const int16_t inputFrame[]); // The DTMF detection.
+    void dtmfDetecting(const int16_t *input_samples, int sample_count); // The DTMF detection.
     // The size of a inputFrame must be equal of a frameSize_, who
     // was set in constructor.
 };

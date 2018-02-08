@@ -24,7 +24,6 @@
 //
 // The size of the buffer we use for reading & processing the audio samples.
 //
-#define BUFLEN 204
 
 using namespace std;
 
@@ -139,8 +138,10 @@ main(int argc, char **argv)
     
     fin.seekg(header.data_offset);
 
+    const int BUFLEN = 204;
+
     int16_t sbuf[BUFLEN];
-    DtmfDetector detector(BUFLEN);
+    DtmfDetector detector;
     while (true)
     {
         if (header.encoding == 2) {
@@ -170,8 +171,8 @@ main(int argc, char **argv)
         }
         
         // detector.zerosIndexDialButton();
-        detector.dtmfDetecting(sbuf);
-        cout << ": `" << detector.getDialButtonsArray() << "'" << endl;
+        detector.dtmfDetecting(sbuf, BUFLEN);
+        cout << detector.getDialButtonsArray() << "'" << endl;
     }
 
     fin.close();
