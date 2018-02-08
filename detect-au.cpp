@@ -24,7 +24,7 @@
 //
 // The size of the buffer we use for reading & processing the audio samples.
 //
-#define BUFLEN 256
+#define BUFLEN 204
 
 using namespace std;
 
@@ -53,8 +53,8 @@ void swap16_inplace(int16_t& a) {
 struct au_header
 {
     uint32_t magic;
-    uint32_t header_size;
-    uint32_t nsamples;
+    uint32_t data_offset;
+    uint32_t data_size;
     uint32_t encoding;
     uint32_t sample_rate;
     uint32_t nchannels;
@@ -64,8 +64,8 @@ string
 au_header_tostr(au_header &h)
 {
     stringstream ss;
-    ss << h.header_size << " header bytes, " << 
-        h.nsamples << " samples, encoding type: " << h.encoding << ", " 
+    ss << h.data_offset << " header bytes, " <<
+        h.data_size << " data bytes, encoding type: " << h.encoding << ", "
         << h.sample_rate << "Hz, " << h.nchannels << " channels";
     return ss.str();
 }
@@ -103,8 +103,8 @@ main(int argc, char **argv)
     else if (header.magic == swap32(AU_MAGIC))
     {
         swap_endian = true;
-        header.header_size = swap32(header.header_size);
-        header.nsamples = swap32(header.nsamples);
+        header.data_offset = swap32(header.data_offset);
+        header.data_size = swap32(header.data_size);
         header.encoding = swap32(header.encoding);
         header.sample_rate = swap32(header.sample_rate);
         header.nchannels = swap32(header.nchannels);
@@ -137,23 +137,30 @@ main(int argc, char **argv)
         return 1;
     }
     
-    fin.seekg(header.header_size);
+    fin.seekg(header.data_offset);
 
     int16_t sbuf[BUFLEN];
     DtmfDetector detector(BUFLEN);
-    for (uint32_t i = 0; i < header.nsamples; i += BUFLEN)
+    while (true)
     {
         if (header.encoding == 2) {
           char cbuf[BUFLEN];
           fin.read(cbuf, BUFLEN);
-          //
+          if (fin.eof()) {
+            break;
+          }
+
           // Promote our 8-bit samples to 16 bits, since that's what the detector
           // expects.  Shift them left during promotion, since the decoder won't
           // pick them up otherwise (volume too low).
           //
           for (int j = 0; j < BUFLEN; ++j)
               sbuf[j] = cbuf[j] << 8;
+
         } else {
+          if (fin.eof()) {
+            break;
+          }
           fin.read((char*)sbuf, BUFLEN * sizeof(int16_t));
           if (swap_endian) {
             for (int j = 0; j < BUFLEN; ++j) {
@@ -162,12 +169,11 @@ main(int argc, char **argv)
           }
         }
         
-        detector.zerosIndexDialButton();
+        // detector.zerosIndexDialButton();
         detector.dtmfDetecting(sbuf);
-        cout << i << ": `" << detector.getDialButtonsArray() << "'" << endl;
+        cout << ": `" << detector.getDialButtonsArray() << "'" << endl;
     }
-    cout << endl;
-    fin.close();
 
+    fin.close();
     return 0;
 }
