@@ -66,11 +66,6 @@ protected:
     static const INT16 CONSTANTS[COEFF_NUMBER];
     // This array keeps the entire buffer PLUS a single batch.
     INT16 *pArraySamples;
-    // The magnitude of each coefficient in the current frame.  Populated
-    // by goertzel_filter
-    INT32 T[COEFF_NUMBER];
-    // An array of size SAMPLES.  Used as input to the Goertzel function.
-    INT16  *internalArray;
     // The size of the entire buffer used for processing samples.  
     // Specified at construction time.
     const INT32 frameSize; //Size of a frame is measured in INT16(word)
@@ -112,7 +107,7 @@ protected:
     static INT32 dialTonesToOhersDialTones;
 
     // This protected function determines the tone present in a single frame.
-    char DTMF_detection(INT16 short_array_samples[]);
+    static char DTMF_detection(INT16 short_array_samples[]);
 public:
 
     // frameSize_ - input frame size

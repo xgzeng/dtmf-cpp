@@ -192,7 +192,7 @@ DtmfDetector::DtmfDetector(INT32 frameSize_): frameSize(frameSize_)
     // than SAMPLES, from the previous call to dtmfDetecting.
     //
     pArraySamples = new INT16 [frameSize + SAMPLES];
-    internalArray = new INT16 [SAMPLES];
+
     frameCount = 0;
     prevDialButton = ' ';
     permissionFlag = 0;
@@ -201,7 +201,6 @@ DtmfDetector::DtmfDetector(INT32 frameSize_): frameSize(frameSize_)
 DtmfDetector::~DtmfDetector()
 {
     delete [] pArraySamples;
-    delete [] internalArray;
 }
 
 void DtmfDetector::dtmfDetecting(INT16 input_array[])
@@ -292,6 +291,13 @@ void DtmfDetector::dtmfDetecting(INT16 input_array[])
 // Detect a tone in a single batch of samples (SAMPLES elements).
 char DtmfDetector::DTMF_detection(INT16 short_array_samples[])
 {
+    // The magnitude of each coefficient in the current frame.  Populated
+    // by goertzel_filter
+    INT32 T[COEFF_NUMBER];
+    
+    // An array of size SAMPLES.  Used as input to the Goertzel function.
+    INT16 internalArray[SAMPLES];
+    
     INT32 Dial=32, Sum;
     char return_value=' ';
     unsigned ii;
