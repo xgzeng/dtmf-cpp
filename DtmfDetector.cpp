@@ -115,8 +115,11 @@ static inline INT16 norm_l(INT32 L_var1)
     return(var_out);
 }
 
+// These coefficients include the 8 DTMF frequencies plus 10 harmonics.
+static const unsigned COEFF_NUMBER=18;
+
 const UINT32 DtmfDetectorInterface::NUMBER_OF_BUTTONS;
-const unsigned DtmfDetector::COEFF_NUMBER;
+
 // These frequencies are slightly different to what is in the generator.
 // More importantly, they are also different to what is described at:
 // http://en.wikipedia.org/wiki/Dual-tone_multi-frequency_signaling
@@ -127,7 +130,8 @@ const unsigned DtmfDetector::COEFF_NUMBER;
 //
 // It seems this is done to simplify harmonic detection.  
 //
-const INT16 DtmfDetector::CONSTANTS[COEFF_NUMBER] = {
+// A fixed-size array to hold the coefficients
+const INT16 CONSTANTS[COEFF_NUMBER] = {
     27860,  // 0: 706Hz, harmonics include: 78Hz, 235Hz, 3592Hz 
     26745,  // 1: 784Hz, apparently a high G, harmonics: 78Hz
     25529,  // 2: 863Hz, harmonics: 78Hz 
@@ -180,10 +184,14 @@ const INT16 DtmfDetector::CONSTANTS[COEFF_NUMBER] = {
     -22811, // 2980Hz, which is 2*1490Hz
     -30555  // 3529Hz, 3*1176Hz, 5*706Hz
 };
-INT32 DtmfDetector::powerThreshold = 328;
-INT32 DtmfDetector::dialTonesToOhersTones = 16;
-INT32 DtmfDetector::dialTonesToOhersDialTones = 6;
-const INT32 DtmfDetector::SAMPLES = 102;
+
+const INT32 powerThreshold = 328;
+const INT32 dialTonesToOhersTones = 16;
+const INT32 dialTonesToOhersDialTones = 6;
+const INT32 SAMPLES = 102;
+
+static char DTMF_detection(const INT16 short_array_samples[]);
+
 //--------------------------------------------------------------------
 DtmfDetector::DtmfDetector(INT32 frameSize_): frameSize(frameSize_)
 {
@@ -287,9 +295,10 @@ void DtmfDetector::dtmfDetecting(INT16 input_array[])
     }
 
 }
+
 //-----------------------------------------------------------------
 // Detect a tone in a single batch of samples (SAMPLES elements).
-char DtmfDetector::DTMF_detection(INT16 short_array_samples[])
+char DTMF_detection(const INT16 short_array_samples[])
 {
     // The magnitude of each coefficient in the current frame.  Populated
     // by goertzel_filter

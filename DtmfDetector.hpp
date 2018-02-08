@@ -60,18 +60,12 @@ public:
 class DtmfDetector : public DtmfDetectorInterface
 {
 protected:
-    // These coefficients include the 8 DTMF frequencies plus 10 harmonics.
-    static const unsigned COEFF_NUMBER=18;
-    // A fixed-size array to hold the coefficients
-    static const INT16 CONSTANTS[COEFF_NUMBER];
     // This array keeps the entire buffer PLUS a single batch.
     INT16 *pArraySamples;
     // The size of the entire buffer used for processing samples.  
     // Specified at construction time.
     const INT32 frameSize; //Size of a frame is measured in INT16(word)
-    // The number of samples to utilize in a single call to Goertzel.
-    // This is referred to as a frame.
-    static const INT32 SAMPLES;
+
     // This gets used for a variety of purposes.  Most notably, it indicates
     // the start of the circular buffer at the start of ::dtmfDetecting.
     INT32 frameCount;
@@ -93,21 +87,6 @@ protected:
     // 111111   222222 -> 1111122222
     char permissionFlag;
 
-    // Used for quickly determining silence within a batch.
-    static INT32 powerThreshold;
-    //
-    // dialTonesToOhersTone is the higher ratio.
-    // dialTonesToOhersDialTones is the lower ratio.
-    //
-    // It seems like the aim of this implementation is to be more tolerant
-    // towards strong "dial tones" than "tones".  The latter include
-    // harmonics.
-    //
-    static INT32 dialTonesToOhersTones;
-    static INT32 dialTonesToOhersDialTones;
-
-    // This protected function determines the tone present in a single frame.
-    static char DTMF_detection(INT16 short_array_samples[]);
 public:
 
     // frameSize_ - input frame size
