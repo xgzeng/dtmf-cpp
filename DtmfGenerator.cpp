@@ -80,12 +80,12 @@ static const int16_t TEMP_COEFF[8] = {
     9315   // 1633Hz
 };
 
+// N.B. bit-shifting to the right corresponds to a multiplication by 8.
+// Determine the number of buffers each tone and silence should occupy.
 DtmfGenerator::DtmfGenerator(int32_t FrameSize, int32_t DurationPush,
-                             int32_t DurationPause) {
-  // N.B. bit-shifting to the right corresponds to a multiplication by 8.
-  // Determine the number of buffers each tone and silence should occupy.
-  countDurationPushButton = (DurationPush << 3) / FrameSize + 1;
-  countDurationPause = (DurationPause << 3) / FrameSize + 1;
+                             int32_t DurationPause)
+: countDurationPushButton((DurationPush << 3) / FrameSize + 1),
+  countDurationPause((DurationPause << 3) / FrameSize + 1) {
   sizeOfFrame = FrameSize;
   readyFlag = 1;
   countLengthDialButtonsArray = 0;

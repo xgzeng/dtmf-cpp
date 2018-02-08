@@ -15,10 +15,10 @@
 class DtmfGenerator {
   // Number of buffers a single tone should occupy.
   // Initialized in the constructor.
-  int32_t countDurationPushButton;
+  const int32_t countDurationPushButton;
   // Number of buffers a single silence should occupy.
   // Initialized in the constructor.
-  int32_t countDurationPause;
+  const int32_t countDurationPause;
   // Number of buffers we have to write to complete the current tone.
   int32_t tempCountDurationPushButton;
   // Number of buffers we have to write to complete the current silence.
