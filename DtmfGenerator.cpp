@@ -67,7 +67,7 @@ static void frequency_oscillator(int16_t Coeff0, int16_t Coeff1, int16_t y[],
 
 // These frequencies match what is described on:
 // http://en.wikipedia.org/wiki/Dual-tone_multi-frequency_signaling
-const int16_t DtmfGenerator::tempCoeff[8] = {
+static const int16_t TEMP_COEFF[8] = {
     // Low frequencies (row)
     27980, // 697Hz
     26956, // 770Hz
@@ -107,131 +107,131 @@ void DtmfGenerator::dtmfGenerating(int16_t y[]) {
       // N.B. y2_1 and y2_2 always seem to be 31000
       switch (pushDialButtons[count]) {
       case '1':
-        tempCoeff1 = tempCoeff[0];
-        tempCoeff2 = tempCoeff[4];
-        y1_1 = tempCoeff[0];
+        tempCoeff1 = TEMP_COEFF[0];
+        tempCoeff2 = TEMP_COEFF[4];
+        y1_1 = TEMP_COEFF[0];
         y2_1 = 31000;
-        y1_2 = tempCoeff[4];
+        y1_2 = TEMP_COEFF[4];
         y2_2 = 31000;
         break;
       case '2':
-        tempCoeff1 = tempCoeff[0];
-        tempCoeff2 = tempCoeff[5];
-        y1_1 = tempCoeff[0];
+        tempCoeff1 = TEMP_COEFF[0];
+        tempCoeff2 = TEMP_COEFF[5];
+        y1_1 = TEMP_COEFF[0];
         y2_1 = 31000;
-        y1_2 = tempCoeff[5];
+        y1_2 = TEMP_COEFF[5];
         y2_2 = 31000;
         break;
       case '3':
-        tempCoeff1 = tempCoeff[0];
-        tempCoeff2 = tempCoeff[6];
-        y1_1 = tempCoeff[0];
+        tempCoeff1 = TEMP_COEFF[0];
+        tempCoeff2 = TEMP_COEFF[6];
+        y1_1 = TEMP_COEFF[0];
         y2_1 = 31000;
-        y1_2 = tempCoeff[6];
+        y1_2 = TEMP_COEFF[6];
         y2_2 = 31000;
         break;
       case 'A':
-        tempCoeff1 = tempCoeff[0];
-        tempCoeff2 = tempCoeff[7];
-        y1_1 = tempCoeff[0];
+        tempCoeff1 = TEMP_COEFF[0];
+        tempCoeff2 = TEMP_COEFF[7];
+        y1_1 = TEMP_COEFF[0];
         y2_1 = 31000;
-        y1_2 = tempCoeff[7];
+        y1_2 = TEMP_COEFF[7];
         y2_2 = 31000;
         break;
       case '4':
-        tempCoeff1 = tempCoeff[1];
-        tempCoeff2 = tempCoeff[4];
-        y1_1 = tempCoeff[1];
+        tempCoeff1 = TEMP_COEFF[1];
+        tempCoeff2 = TEMP_COEFF[4];
+        y1_1 = TEMP_COEFF[1];
         y2_1 = 31000;
-        y1_2 = tempCoeff[4];
+        y1_2 = TEMP_COEFF[4];
         y2_2 = 31000;
         break;
       case '5':
-        tempCoeff1 = tempCoeff[1];
-        tempCoeff2 = tempCoeff[5];
-        y1_1 = tempCoeff[1];
+        tempCoeff1 = TEMP_COEFF[1];
+        tempCoeff2 = TEMP_COEFF[5];
+        y1_1 = TEMP_COEFF[1];
         y2_1 = 31000;
-        y1_2 = tempCoeff[5];
+        y1_2 = TEMP_COEFF[5];
         y2_2 = 31000;
         break;
       case '6':
-        tempCoeff1 = tempCoeff[1];
-        tempCoeff2 = tempCoeff[6];
-        y1_1 = tempCoeff[1];
+        tempCoeff1 = TEMP_COEFF[1];
+        tempCoeff2 = TEMP_COEFF[6];
+        y1_1 = TEMP_COEFF[1];
         y2_1 = 31000;
-        y1_2 = tempCoeff[6];
+        y1_2 = TEMP_COEFF[6];
         y2_2 = 31000;
         break;
       case 'B':
-        tempCoeff1 = tempCoeff[1];
-        tempCoeff2 = tempCoeff[7];
-        y1_1 = tempCoeff[1];
+        tempCoeff1 = TEMP_COEFF[1];
+        tempCoeff2 = TEMP_COEFF[7];
+        y1_1 = TEMP_COEFF[1];
         y2_1 = 31000;
-        y1_2 = tempCoeff[7];
+        y1_2 = TEMP_COEFF[7];
         y2_2 = 31000;
         break;
       case '7':
-        tempCoeff1 = tempCoeff[2];
-        tempCoeff2 = tempCoeff[4];
-        y1_1 = tempCoeff[2];
+        tempCoeff1 = TEMP_COEFF[2];
+        tempCoeff2 = TEMP_COEFF[4];
+        y1_1 = TEMP_COEFF[2];
         y2_1 = 31000;
-        y1_2 = tempCoeff[4];
+        y1_2 = TEMP_COEFF[4];
         y2_2 = 31000;
         break;
       case '8':
-        tempCoeff1 = tempCoeff[2];
-        tempCoeff2 = tempCoeff[5];
-        y1_1 = tempCoeff[2];
+        tempCoeff1 = TEMP_COEFF[2];
+        tempCoeff2 = TEMP_COEFF[5];
+        y1_1 = TEMP_COEFF[2];
         y2_1 = 31000;
-        y1_2 = tempCoeff[5];
+        y1_2 = TEMP_COEFF[5];
         y2_2 = 31000;
         break;
       case '9':
-        tempCoeff1 = tempCoeff[2];
-        tempCoeff2 = tempCoeff[6];
-        y1_1 = tempCoeff[2];
+        tempCoeff1 = TEMP_COEFF[2];
+        tempCoeff2 = TEMP_COEFF[6];
+        y1_1 = TEMP_COEFF[2];
         y2_1 = 31000;
-        y1_2 = tempCoeff[6];
+        y1_2 = TEMP_COEFF[6];
         y2_2 = 31000;
         break;
       case 'C':
-        tempCoeff1 = tempCoeff[2];
-        tempCoeff2 = tempCoeff[7];
-        y1_1 = tempCoeff[2];
+        tempCoeff1 = TEMP_COEFF[2];
+        tempCoeff2 = TEMP_COEFF[7];
+        y1_1 = TEMP_COEFF[2];
         y2_1 = 31000;
-        y1_2 = tempCoeff[7];
+        y1_2 = TEMP_COEFF[7];
         y2_2 = 31000;
         break;
       case '*':
-        tempCoeff1 = tempCoeff[3];
-        tempCoeff2 = tempCoeff[4];
-        y1_1 = tempCoeff[3];
+        tempCoeff1 = TEMP_COEFF[3];
+        tempCoeff2 = TEMP_COEFF[4];
+        y1_1 = TEMP_COEFF[3];
         y2_1 = 31000;
-        y1_2 = tempCoeff[4];
+        y1_2 = TEMP_COEFF[4];
         y2_2 = 31000;
         break;
       case '0':
-        tempCoeff1 = tempCoeff[3];
-        tempCoeff2 = tempCoeff[5];
-        y1_1 = tempCoeff[3];
+        tempCoeff1 = TEMP_COEFF[3];
+        tempCoeff2 = TEMP_COEFF[5];
+        y1_1 = TEMP_COEFF[3];
         y2_1 = 31000;
-        y1_2 = tempCoeff[5];
+        y1_2 = TEMP_COEFF[5];
         y2_2 = 31000;
         break;
       case '#':
-        tempCoeff1 = tempCoeff[3];
-        tempCoeff2 = tempCoeff[6];
-        y1_1 = tempCoeff[3];
+        tempCoeff1 = TEMP_COEFF[3];
+        tempCoeff2 = TEMP_COEFF[6];
+        y1_1 = TEMP_COEFF[3];
         y2_1 = 31000;
-        y1_2 = tempCoeff[6];
+        y1_2 = TEMP_COEFF[6];
         y2_2 = 31000;
         break;
       case 'D':
-        tempCoeff1 = tempCoeff[3];
-        tempCoeff2 = tempCoeff[7];
-        y1_1 = tempCoeff[3];
+        tempCoeff1 = TEMP_COEFF[3];
+        tempCoeff2 = TEMP_COEFF[7];
+        y1_1 = TEMP_COEFF[3];
         y2_1 = 31000;
-        y1_2 = tempCoeff[7];
+        y1_2 = TEMP_COEFF[7];
         y2_2 = 31000;
         break;
       default:

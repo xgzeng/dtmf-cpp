@@ -13,11 +13,6 @@
 // frequences, corresponding push buttons.
 
 class DtmfGenerator {
-  // The coefficients for each of the 8 frequencies.
-  // The four low frequencies come first, followed by the four high
-  // frequencies.
-  // The coefficients are fixed for a sampling rate of 8KHz.
-  static const int16_t tempCoeff[8];
   // Number of buffers a single tone should occupy.
   // Initialized in the constructor.
   int32_t countDurationPushButton;
