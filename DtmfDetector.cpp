@@ -5,9 +5,10 @@
  * All rights reserved.
  */
 
-#include <cassert>
 #include "DtmfDetector.hpp"
-#include <iostream>
+#include <cassert>
+#include <algorithm>
+
 #if DEBUG
 #include <cstdio>
 #endif
@@ -189,7 +190,7 @@ const int16_t CONSTANTS[COEFF_NUMBER] = {
 const int32_t powerThreshold = 328;
 const int32_t dialTonesToOhersTones = 16;
 const int32_t dialTonesToOhersDialTones = 6;
-const int32_t SAMPLES = 102; // 102;
+const int32_t SAMPLES = 102;
 
 static char DTMF_detection(const int16_t short_array_samples[]);
 
@@ -216,6 +217,11 @@ void DtmfDetector::dtmfDetecting(const int16_t input_array[])
     // Copy the input array into the middle of pArraySamples.
     // I think the first frameCount samples contain the last batch from the
     // previous call to this function.
+
+    //if (frameCount != 0) {
+    //  std::copy
+    //}
+
     for(int ii=0; ii < frameSize; ii++)
     {
         pArraySamples[ii + frameCount] = input_array[ii];
@@ -234,23 +240,8 @@ void DtmfDetector::dtmfDetecting(const int16_t input_array[])
     while(frameCount >= SAMPLES)
     {
         // Determine the tone present in the current batch
-        char temp_dial_button = DTMF_detection(&pArraySamples[temp_index]);
-        std::cout << temp_dial_button << std::endl;
-        // Determine if we should register it as a new tone, or
-        // ignore it as a continuation of a previously 
-        // registered tone.  
-
-        if (temp_dial_button != prevDialButton) {
-            if (temp_dial_button != ' ') dialButtons[indexForDialButtons++] = temp_dial_button;
-            // NUL-terminate the string.
-            dialButtons[indexForDialButtons] = 0;
-        }
-
-        // Store the current tone.  In light of the above
-        // behaviour, all that really matters is whether it was
-        // a tone or silence.  Finally, move on to the next
-        // batch.
-        prevDialButton = temp_dial_button;
+        char dial_char = DTMF_detection(&pArraySamples[temp_index]);
+        OnDetectedTone(dial_char);
 
         temp_index += SAMPLES;
         frameCount -= SAMPLES;
@@ -267,6 +258,24 @@ void DtmfDetector::dtmfDetecting(const int16_t input_array[])
         pArraySamples[i] = pArraySamples[i + temp_index];
     }
 
+}
+
+void DtmfDetector::OnDetectedTone(char dial_char) {
+  // Determine if we should register it as a new tone, or
+  // ignore it as a continuation of a previously 
+  // registered tone.  
+
+  if (dial_char != prevDialButton) {
+    if (dial_char != ' ') dialButtons[indexForDialButtons++] = dial_char;
+    // NUL-terminate the string.
+    dialButtons[indexForDialButtons] = 0;
+  }
+
+  // Store the current tone.  In light of the above
+  // behaviour, all that really matters is whether it was
+  // a tone or silence.  Finally, move on to the next
+  // batch.
+  prevDialButton = dial_char;
 }
 
 //-----------------------------------------------------------------

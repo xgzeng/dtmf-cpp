@@ -65,6 +65,8 @@ protected:
     // The tone detected by the previous call to DTMF_detection.
     char prevDialButton;
 
+    virtual void OnDetectedTone(char dial_char);
+
 public:
 
     // frameSize_ - input frame size
