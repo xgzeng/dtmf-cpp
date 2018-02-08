@@ -7,7 +7,7 @@
 
 #include <cassert>
 #include "DtmfDetector.hpp"
-
+#include <iostream>
 #if DEBUG
 #include <cstdio>
 #endif
@@ -84,10 +84,11 @@ static void goertzel_filter(INT16 Koeff0, INT16 Koeff1, const INT16 arraySamples
 // for same processor's optimized function (norm_l)
 //
 // This function is used for normalization. TODO: how exactly does it work?
+// Result is highest non-zero bit position
 static inline INT16 norm_l(INT32 L_var1)
 {
     INT16 var_out;
-
+    
     if (L_var1 == 0)
     {
         var_out = 0;
@@ -188,7 +189,7 @@ const INT16 CONSTANTS[COEFF_NUMBER] = {
 const INT32 powerThreshold = 328;
 const INT32 dialTonesToOhersTones = 16;
 const INT32 dialTonesToOhersDialTones = 6;
-const INT32 SAMPLES = 102;
+const INT32 SAMPLES = 102; // 102;
 
 static char DTMF_detection(const INT16 short_array_samples[]);
 
@@ -235,7 +236,7 @@ void DtmfDetector::dtmfDetecting(const INT16 input_array[])
     {
         // Determine the tone present in the current batch
         char temp_dial_button = DTMF_detection(&pArraySamples[temp_index]);
-
+        std::cout << temp_dial_button << std::endl;
         // Determine if we should register it as a new tone, or
         // ignore it as a continuation of a previously 
         // registered tone.  
@@ -247,6 +248,7 @@ void DtmfDetector::dtmfDetecting(const INT16 input_array[])
         // SILENCE TONE_A TONE_B will get registered as TONE_B
         //
         // TONE_A will be ignored.
+#if 0
         if(permissionFlag)
         {
             if(temp_dial_button != ' ')
@@ -266,6 +268,12 @@ void DtmfDetector::dtmfDetecting(const INT16 input_array[])
         if((temp_dial_button != ' ') && (prevDialButton == ' '))
         {
             permissionFlag = 1;
+        }
+#endif
+        if (temp_dial_button != prevDialButton) {
+            if (temp_dial_button != ' ') dialButtons[indexForDialButtons++] = temp_dial_button;
+            // NUL-terminate the string.
+            dialButtons[indexForDialButtons] = 0;
         }
 
         // Store the current tone.  In light of the above
@@ -302,52 +310,55 @@ char DTMF_detection(const INT16 short_array_samples[])
     // An array of size SAMPLES.  Used as input to the Goertzel function.
     INT16 internalArray[SAMPLES];
     
-    INT32 Dial=32, Sum;
     char return_value=' ';
     unsigned ii;
-    Sum = 0;
 
     // Dial         TODO: what is this?
-    // Sum          Sum of the absolute values of samples in the batch.
     // return_value The tone detected in this batch (can be silence).
     // ii           Iteration variable
 
-    // Quick check for silence.
-    for(ii = 0; ii < SAMPLES; ii ++)
     {
-        if(short_array_samples[ii] >= 0)
-            Sum += short_array_samples[ii];
-        else
-            Sum -= short_array_samples[ii];
-    }
-    Sum /= SAMPLES;
-    if(Sum < powerThreshold)
-        return ' ';
-
-    //Normalization
-    // Iterate over each sample.  
-    // First, adjusting Dial to an appropriate value for the batch.
-    for(ii = 0; ii < SAMPLES; ii++)
-    {
-        T[0] = static_cast<INT32>(short_array_samples[ii]);
-        if(T[0] != 0)
-        {
-            if(Dial > norm_l(T[0]))
-            {
-                Dial = norm_l(T[0]);
-            }
-        }
+      // Quick check for silence by calculate average magnitude
+      INT32 Sum = 0;
+      for(ii = 0; ii < SAMPLES; ii ++)
+      {
+          Sum += abs(short_array_samples[ii]);
+          //if(short_array_samples[ii] >= 0)
+          //    Sum += short_array_samples[ii];
+          //else
+          //    Sum -= short_array_samples[ii];
+      }
+      Sum /= SAMPLES;
+      if(Sum < powerThreshold)
+          return ' ';
     }
 
-    Dial -= 16;
-
-    // Next, utilize Dial for scaling and populate internalArray.
-    for(ii = 0; ii < SAMPLES; ii++)
+    // Normalization
     {
-        T[0] = short_array_samples[ii];
-        internalArray[ii] = static_cast<INT16>(T[0] << Dial);
-    }
+      // Iterate over each sample.
+      // First, adjusting Dial to an appropriate value for the batch.
+      INT32 Dial = 32;
+      for(ii = 0; ii < SAMPLES; ii++)
+      {
+          INT32 sample32 = static_cast<INT32>(short_array_samples[ii]);
+          if(sample32 != 0)
+          {
+              if(Dial > norm_l(sample32))
+              {
+                  Dial = norm_l(sample32);
+              }
+          }
+      }
 
+      Dial -= 16;
+
+      // Next, utilize Dial for scaling and populate internalArray.
+      for(ii = 0; ii < SAMPLES; ii++)
+      {
+          INT32 sample32 = short_array_samples[ii];
+          internalArray[ii] = static_cast<INT16>(sample32 << Dial);
+      }
+    }
 
     //Frequency detection
     goertzel_filter(CONSTANTS[0], CONSTANTS[1], internalArray, &T[0], &T[1], SAMPLES);
@@ -372,7 +383,7 @@ char DTMF_detection(const INT16 short_array_samples[])
     // Temp     The frequency at the maximum row/column (gets reused 
     //          below).
     //Find max row(low frequences) tones
-    for(ii = 0; ii < 4; ii++)
+    for(int ii = 0; ii < 4; ii++)
     {
         if(Temp < T[ii])
         {
@@ -385,7 +396,7 @@ char DTMF_detection(const INT16 short_array_samples[])
     INT32 Column = 4;
     Temp = 0;
     //Find max column(high frequences) tones
-    for(ii = 4; ii < 8; ii++)
+    for(int ii = 4; ii < 8; ii++)
     {
         if(Temp < T[ii])
         {
@@ -394,7 +405,7 @@ char DTMF_detection(const INT16 short_array_samples[])
         }
     }
 
-    Sum=0;
+    INT32 Sum = 0;
     //Find average value dial tones without max row and max column
     for(ii = 0; ii < 10; ii++)
     {
