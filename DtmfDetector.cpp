@@ -194,21 +194,17 @@ static char DTMF_detection(const int16_t short_array_samples[]);
 //--------------------------------------------------------------------
 DtmfDetectorBase::DtmfDetectorBase()
 {
-    frameCount = 0;
-    prevDialButton = ' ';
-}
-//---------------------------------------------------------------------
-DtmfDetectorBase::~DtmfDetectorBase()
-{
+    buf_sample_count_ = 0;
+    prev_dial_ = ' ';
 }
 
 void DtmfDetectorBase::dtmfDetecting(const int16_t *samples, int sample_count)
 {
-    if (frameCount != 0) {
-        // Copy the input array into the back of pArraySamples.
-        int count_to_copy = std::min(sample_count, DTMF_DETECTION_BATCH_SIZE - frameCount);
-        std::copy(samples, samples + count_to_copy, pArraySamples + frameCount);
-        frameCount += count_to_copy;
+    if (buf_sample_count_ != 0) {
+        // Copy the input array into the back of buf_samples_.
+        int count_to_copy = std::min(sample_count, DTMF_DETECTION_BATCH_SIZE - buf_sample_count_);
+        std::copy(samples, samples + count_to_copy, buf_samples_ + buf_sample_count_);
+        buf_sample_count_ += count_to_copy;
         samples += count_to_copy;
         sample_count -= count_to_copy;
         if (sample_count < DTMF_DETECTION_BATCH_SIZE) {
@@ -217,10 +213,10 @@ void DtmfDetectorBase::dtmfDetecting(const int16_t *samples, int sample_count)
     }
 
     // process batch samples in buffer
-    if (frameCount == DTMF_DETECTION_BATCH_SIZE) {
-        char dial_char = DTMF_detection(pArraySamples);
+    if (buf_sample_count_ == DTMF_DETECTION_BATCH_SIZE) {
+        char dial_char = DTMF_detection(buf_samples_);
         OnDetectedTone(dial_char);
-        frameCount = 0;
+        buf_sample_count_ = 0;
     }
 
     // process samples in input data directory
@@ -237,25 +233,20 @@ void DtmfDetectorBase::dtmfDetecting(const int16_t *samples, int sample_count)
     // We have sample_count samples left to process, but it's not enough for an entire batch. 
     // Store the samples to the buffer and deal with them
     // next time this function is called.
-    assert(frameCount == 0 && sample_count < DTMF_DETECTION_BATCH_SIZE);
-    std::copy(samples, samples + sample_count, pArraySamples);
-    frameCount = sample_count;
+    assert(buf_sample_count_ == 0 && sample_count < DTMF_DETECTION_BATCH_SIZE);
+    std::copy(samples, samples + sample_count, buf_samples_);
+    buf_sample_count_ = sample_count;
 }
 
 void DtmfDetectorBase::OnDetectedTone(char dial_char) {
   // Determine if we should register it as a new tone, or
-  // ignore it as a continuation of a previously 
-  // registered tone.  
-
-  if (dial_char != prevDialButton) {
-    if (dial_char != ' ') OnNewTone(dial_char);
+  // ignore it as a continuation of a previous tone.  
+  if (dial_char != prev_dial_ && dial_char != ' ') {
+    OnNewTone(dial_char);
   }
 
-  // Store the current tone.  In light of the above
-  // behaviour, all that really matters is whether it was
-  // a tone or silence.  Finally, move on to the next
-  // batch.
-  prevDialButton = dial_char;
+  // Store the current tone.
+  prev_dial_ = dial_char;
 }
 
 //-----------------------------------------------------------------

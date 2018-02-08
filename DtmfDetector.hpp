@@ -18,14 +18,14 @@ class DtmfDetectorBase
 {
 private:
   // This array keeps the entire buffer PLUS a single batch.
-  int16_t pArraySamples[DTMF_DETECTION_BATCH_SIZE];
+  int16_t buf_samples_[DTMF_DETECTION_BATCH_SIZE];
 
   // This gets used for a variety of purposes.  Most notably, it indicates
   // the start of the circular buffer at the start of ::dtmfDetecting.
-  int32_t frameCount;
+  int buf_sample_count_;
 
   // The tone detected by the previous call to DTMF_detection.
-  char prevDialButton;
+  char prev_dial_;
 
   void OnDetectedTone(char dial_char);
 
@@ -34,7 +34,6 @@ protected:
 
 public:
   DtmfDetectorBase();
-  ~DtmfDetectorBase();
 
   void dtmfDetecting(const int16_t *input_samples, int sample_count);
 };
