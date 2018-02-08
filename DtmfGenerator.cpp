@@ -8,19 +8,19 @@
 #include "DtmfGenerator.hpp"
 
 // Multiplicaton of two fixed-point numbers
-static inline INT32 MPY48SR(INT16 o16, INT32 o32)
+static inline int32_t MPY48SR(int16_t o16, int32_t o32)
 {
     // http://stackoverflow.com/questions/12864216/why-perform-multiplication-in-this-way
-    UINT32   Temp0;
-    INT32    Temp1;
+    uint32_t   Temp0;
+    int32_t    Temp1;
     // A1. get the lower 16 bits of the 32-bit param
     // A2. multiply them with the 16-bit param
     // A3. add 16384
     // A4. bitshift to the right by 15 (TODO: why 15?)
-    Temp0 = (((UINT16)o32 * o16) + 0x4000) >> 15;
+    Temp0 = (((uint16_t)o32 * o16) + 0x4000) >> 15;
     // B1. Get the higher 16 bits of the 32-bit param
     // B2. Multiply them with the 16-bit param
-    Temp1 = (INT16)(o32 >> 16) * o16;
+    Temp1 = (int16_t)(o32 >> 16) * o16;
     // 1. Shift B to the left (TODO: why do this?)
     // 2. Combine with A and return
     return (Temp1 << 1) + Temp0;
@@ -36,15 +36,15 @@ static inline INT32 MPY48SR(INT16 o16, INT32 o32)
 // y1_1
 // y2_0
 // y2_1
-static void frequency_oscillator(INT16 Coeff0, INT16 Coeff1,
-                                 INT16 y[], UINT32 COUNT,
-                                 INT32 *y1_0, INT32 *y1_1,
-                                 INT32 *y2_0, INT32 *y2_1)
+static void frequency_oscillator(int16_t Coeff0, int16_t Coeff1,
+                                 int16_t y[], uint32_t COUNT,
+                                 int32_t *y1_0, int32_t *y1_1,
+                                 int32_t *y2_0, int32_t *y2_1)
 {
     // the register keyword isn't really useful and achieves little.
     // http://www.drdobbs.com/keywords-that-arent-or-comments-by-anoth/184403859
-    register INT32 Temp1_0, Temp1_1, Temp2_0, Temp2_1, Temp0, Temp1, Subject;
-    UINT16 ii;
+    register int32_t Temp1_0, Temp1_1, Temp2_0, Temp2_1, Temp0, Temp1, Subject;
+    uint16_t ii;
 
     // Write the parameters to the registers.
     // As far as I can tell, using commas instead of the semicolon does not
@@ -69,7 +69,7 @@ static void frequency_oscillator(INT16 Coeff0, INT16 Coeff1,
         // http://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B
         if(Subject)
             Temp0 >>= 1;
-        y[ii] = (INT16)Temp0;
+        y[ii] = (int16_t)Temp0;
     }
 
     *y1_0 = Temp1_0,
@@ -80,7 +80,7 @@ static void frequency_oscillator(INT16 Coeff0, INT16 Coeff1,
 
 // These frequencies match what is described on:
 // http://en.wikipedia.org/wiki/Dual-tone_multi-frequency_signaling
-const INT16 DtmfGenerator::tempCoeff[8] = {
+const int16_t DtmfGenerator::tempCoeff[8] = {
     //Low frequencies (row)
     27980, // 697Hz
     26956, // 770Hz
@@ -93,7 +93,7 @@ const INT16 DtmfGenerator::tempCoeff[8] = {
     9315   // 1633Hz
 }; 
 
-DtmfGenerator::DtmfGenerator(INT32 FrameSize, INT32 DurationPush, INT32 DurationPause)
+DtmfGenerator::DtmfGenerator(int32_t FrameSize, int32_t DurationPush, int32_t DurationPause)
 {
     // N.B. bit-shifting to the right corresponds to a multiplication by 8.
     // Determine the number of buffers each tone and silence should occupy.
@@ -109,7 +109,7 @@ DtmfGenerator::~DtmfGenerator()
 {
 }
 
-void DtmfGenerator::dtmfGenerating(INT16 y[])
+void DtmfGenerator::dtmfGenerating(int16_t y[])
 {
     if(readyFlag)   return;
 
@@ -281,7 +281,7 @@ void DtmfGenerator::dtmfGenerating(INT16 y[])
         {
             // Handle silence.  Simply zeros the buffer.
             --tempCountDurationPause;
-            for(INT32 ii=0; ii<sizeOfFrame; ii++)
+            for(int32_t ii=0; ii<sizeOfFrame; ii++)
             {
                 y[ii] = 0;
             }
@@ -305,7 +305,7 @@ void DtmfGenerator::dtmfGenerating(INT16 y[])
     return;
 }
 
-INT32 DtmfGenerator::transmitNewDialButtonsArray(char dialButtonsArray[], UINT32 lengthDialButtonsArray)
+int32_t DtmfGenerator::transmitNewDialButtonsArray(char dialButtonsArray[], uint32_t lengthDialButtonsArray)
 {
     // If we're still busy processing the previous tones, exit straight away.
     if(getReadyFlag() == 0) return 0;
@@ -321,7 +321,7 @@ INT32 DtmfGenerator::transmitNewDialButtonsArray(char dialButtonsArray[], UINT32
     // clip the input to a size our pushDialButtons fixed-size array can 
     // accomodate, and populate that array.
     if(lengthDialButtonsArray > 20) countLengthDialButtonsArray = 20;
-    for(INT32 ii=0; ii<countLengthDialButtonsArray; ii++)
+    for(int32_t ii=0; ii<countLengthDialButtonsArray; ii++)
     {
         pushDialButtons[ii] = dialButtonsArray[ii];
     }
