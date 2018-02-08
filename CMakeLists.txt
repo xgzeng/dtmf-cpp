@@ -9,3 +9,6 @@ add_library(dtmf-cpp
 
 add_executable(detect-au detect-au.cpp)
 target_link_libraries(detect-au dtmf-cpp)
+
+add_executable(example example.cpp)
+target_link_libraries(example dtmf-cpp)

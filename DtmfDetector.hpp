@@ -14,8 +14,15 @@
 const int DTMF_DETECTION_BATCH_SIZE = 102;
 
 // DTMF detector object
-class DtmfDetectorBase 
-{
+class DtmfDetectorBase {
+public:
+  DtmfDetectorBase();
+
+  void Detect(const int16_t *input_samples, int sample_count);
+
+protected:
+  virtual void OnNewTone(char dial_char) = 0;
+
 private:
   // This array keeps the entire buffer PLUS a single batch.
   int16_t buf_samples_[DTMF_DETECTION_BATCH_SIZE];
@@ -28,34 +35,18 @@ private:
   char prev_dial_;
 
   void OnDetectedTone(char dial_char);
-
-protected:
-  virtual void OnNewTone(char dial_char) = 0;
-
-public:
-  DtmfDetectorBase();
-
-  void dtmfDetecting(const int16_t *input_samples, int sample_count);
 };
 
-class DtmfDetector : public DtmfDetectorBase
-{
+class DtmfDetector : public DtmfDetectorBase {
 public:
-  const std::string& GetResult() const {
-    return detected_dial;
-  }
+  const std::string &GetResult() const { return detected_dial; }
 
-  void ClearResult() {
-    detected_dial.clear();
-  }
+  void ClearResult() { detected_dial.clear(); }
 
 private:
   std::string detected_dial;
 
-  void OnNewTone(char dial_char) override {
-    detected_dial += dial_char;
-  }
+  void OnNewTone(char dial_char) override { detected_dial += dial_char; }
 };
-
 
 #endif
