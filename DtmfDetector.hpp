@@ -93,7 +93,7 @@ public:
     DtmfDetector(INT32 frameSize_);
     ~DtmfDetector();
 
-    void dtmfDetecting(INT16 inputFrame[]); // The DTMF detection.
+    void dtmfDetecting(const INT16 inputFrame[]); // The DTMF detection.
     // The size of a inputFrame must be equal of a frameSize_, who
     // was set in constructor.
 };

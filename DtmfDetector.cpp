@@ -211,87 +211,82 @@ DtmfDetector::~DtmfDetector()
     delete [] pArraySamples;
 }
 
-void DtmfDetector::dtmfDetecting(INT16 input_array[])
+void DtmfDetector::dtmfDetecting(const INT16 input_array[])
 {
-    // ii                   Variable for iteration
-    // temp_dial_button     A tone detected in part of the input_array
-    UINT32 ii;
-    char temp_dial_button;
-
     // Copy the input array into the middle of pArraySamples.
     // I think the first frameCount samples contain the last batch from the
     // previous call to this function.
-    for(ii=0; ii < frameSize; ii++)
+    for(int ii=0; ii < frameSize; ii++)
     {
         pArraySamples[ii + frameCount] = input_array[ii];
     }
 
     frameCount += frameSize;
-    // Read index into pArraySamples that corresponds to the current batch.
-    UINT32 temp_index = 0;
+    
     // If don't have enough samples to process an entire batch, then don't
     // do anything.
-    if(frameCount >= SAMPLES)
+    if(frameCount < SAMPLES) return;
+    
+    // Read index into pArraySamples that corresponds to the current batch.
+    UINT32 temp_index = 0;
+    // Process samples while we still have enough for an entire
+    // batch.
+    while(frameCount >= SAMPLES)
     {
-        // Process samples while we still have enough for an entire
+        // Determine the tone present in the current batch
+        char temp_dial_button = DTMF_detection(&pArraySamples[temp_index]);
+
+        // Determine if we should register it as a new tone, or
+        // ignore it as a continuation of a previously 
+        // registered tone.  
+        //
+        // This seems buggy.  Consider a sequence of three
+        // tones, with each tone corresponding to the dominant
+        // tone in a batch of SAMPLES samples:
+        //
+        // SILENCE TONE_A TONE_B will get registered as TONE_B
+        //
+        // TONE_A will be ignored.
+        if(permissionFlag)
+        {
+            if(temp_dial_button != ' ')
+            {
+                dialButtons[indexForDialButtons++] = temp_dial_button;
+                // NUL-terminate the string.
+                dialButtons[indexForDialButtons] = 0;
+                // If we've gone out of bounds, wrap around.
+                if(indexForDialButtons >= 64)
+                    indexForDialButtons = 0;
+            }
+            permissionFlag = 0;
+        }
+
+        // If we've gone from silence to a tone, set the flag.
+        // The tone will be registered in the next iteration.
+        if((temp_dial_button != ' ') && (prevDialButton == ' '))
+        {
+            permissionFlag = 1;
+        }
+
+        // Store the current tone.  In light of the above
+        // behaviour, all that really matters is whether it was
+        // a tone or silence.  Finally, move on to the next
         // batch.
-        while(frameCount >= SAMPLES)
-        {
-            // Determine the tone present in the current batch
-            temp_dial_button = DTMF_detection(&pArraySamples[temp_index]);
+        prevDialButton = temp_dial_button;
 
-            // Determine if we should register it as a new tone, or
-            // ignore it as a continuation of a previously 
-            // registered tone.  
-            //
-            // This seems buggy.  Consider a sequence of three
-            // tones, with each tone corresponding to the dominant
-            // tone in a batch of SAMPLES samples:
-            //
-            // SILENCE TONE_A TONE_B will get registered as TONE_B
-            //
-            // TONE_A will be ignored.
-            if(permissionFlag)
-            {
-                if(temp_dial_button != ' ')
-                {
-                    dialButtons[indexForDialButtons++] = temp_dial_button;
-                    // NUL-terminate the string.
-                    dialButtons[indexForDialButtons] = 0;
-                    // If we've gone out of bounds, wrap around.
-                    if(indexForDialButtons >= 64)
-                        indexForDialButtons = 0;
-                }
-                permissionFlag = 0;
-            }
+        temp_index += SAMPLES;
+        frameCount -= SAMPLES;
+    }
 
-            // If we've gone from silence to a tone, set the flag.
-            // The tone will be registered in the next iteration.
-            if((temp_dial_button != ' ') && (prevDialButton == ' '))
-            {
-                permissionFlag = 1;
-            }
-
-            // Store the current tone.  In light of the above
-            // behaviour, all that really matters is whether it was
-            // a tone or silence.  Finally, move on to the next
-            // batch.
-            prevDialButton = temp_dial_button;
-
-            temp_index += SAMPLES;
-            frameCount -= SAMPLES;
-        }
-
-        //
-        // We have frameCount samples left to process, but it's not
-        // enough for an entire batch.  Shift these left-over
-        // samples to the beginning of our array and deal with them
-        // next time this function is called.
-        //
-        for(ii=0; ii < frameCount; ii++)
-        {
-            pArraySamples[ii] = pArraySamples[ii + temp_index];
-        }
+    //
+    // We have frameCount samples left to process, but it's not
+    // enough for an entire batch.  Shift these left-over
+    // samples to the beginning of our array and deal with them
+    // next time this function is called.
+    //
+    for(int i = 0; i < frameCount; i++)
+    {
+        pArraySamples[i] = pArraySamples[i + temp_index];
     }
 
 }
