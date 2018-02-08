@@ -9,14 +9,7 @@
 #ifndef DTMF_DETECTOR
 #define DTMF_DETECTOR
 
-#include "types_cpp.hpp"
-
-
-typedef Types<sizeof(long int), sizeof(int), sizeof(short int), sizeof(char)>::Int32     INT32;
-typedef Types<sizeof(long int), sizeof(int), sizeof(short int), sizeof(char)>::Uint32    UINT32;
-typedef Types<sizeof(long int), sizeof(int), sizeof(short int), sizeof(char)>::Int16     INT16;
-typedef Types<sizeof(long int), sizeof(int), sizeof(short int), sizeof(char)>::Uint16    UINT16;
-
+#include <cstdint>
 
 // DTMF detector object
 
@@ -26,16 +19,17 @@ class DtmfDetectorInterface
 {
 public:
     // The maximum number of detected tones
-    static const UINT32 NUMBER_OF_BUTTONS = 65;
+    static const uint32_t NUMBER_OF_BUTTONS = 65;
     // A fixed-size array to store the detected tones.  The array is
     // NUL-terminated.
     char dialButtons[NUMBER_OF_BUTTONS];
     // A constant pointer to expose dialButtons for read-only access
     char *const pDialButtons;
     // The number of tones detected (stored in dialButtons)
-    mutable INT16 indexForDialButtons;
+    int16_t indexForDialButtons;
+
 public:
-    INT32 getIndexDialButtons() // The number of detected push buttons, max number = 64
+    int32_t getIndexDialButtons() // The number of detected push buttons, max number = 64
     const
     {
         return indexForDialButtons;
@@ -46,7 +40,6 @@ public:
         return pDialButtons;
     }
     void zerosIndexDialButton() // Zeros of a detected button array
-    const
     {
         indexForDialButtons = 0;
     }
@@ -61,24 +54,24 @@ class DtmfDetector : public DtmfDetectorInterface
 {
 protected:
     // This array keeps the entire buffer PLUS a single batch.
-    INT16 *pArraySamples;
+    int16_t *pArraySamples;
     // The size of the entire buffer used for processing samples.  
     // Specified at construction time.
-    const INT32 frameSize; //Size of a frame is measured in INT16(word)
+    const int32_t frameSize; //Size of a frame is measured in INT16(word)
 
     // This gets used for a variety of purposes.  Most notably, it indicates
     // the start of the circular buffer at the start of ::dtmfDetecting.
-    INT32 frameCount;
+    int32_t frameCount;
     // The tone detected by the previous call to DTMF_detection.
     char prevDialButton;
 
 public:
 
     // frameSize_ - input frame size
-    DtmfDetector(INT32 frameSize_);
+    DtmfDetector(int32_t frameSize_);
     ~DtmfDetector();
 
-    void dtmfDetecting(const INT16 inputFrame[]); // The DTMF detection.
+    void dtmfDetecting(const int16_t inputFrame[]); // The DTMF detection.
     // The size of a inputFrame must be equal of a frameSize_, who
     // was set in constructor.
 };

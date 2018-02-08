@@ -13,12 +13,12 @@
 #endif
 
 // This is the same function as in DtmfGenerator.cpp
-static inline INT32 MPY48SR(INT16 o16, INT32 o32)
+static inline int32_t MPY48SR(int16_t o16, int32_t o32)
 {
-    UINT32   Temp0;
-    INT32    Temp1;
-    Temp0 = (((UINT16)o32 * o16) + 0x4000) >> 15;
-    Temp1 = (INT16)(o32 >> 16) * o16;
+    uint32_t   Temp0;
+    int32_t    Temp1;
+    Temp0 = (((uint16_t)o32 * o16) + 0x4000) >> 15;
+    Temp1 = (int16_t)(o32 >> 16) * o16;
     return (Temp1 << 1) + Temp0;
 }
 
@@ -33,16 +33,16 @@ static inline INT32 MPY48SR(INT16 o16, INT32 o32)
 // Magnitude1       Detected magnitude of the second frequency.
 // COUNT            The number of elements in arraySamples.  Always equal to
 //                  SAMPLES in practice.
-static void goertzel_filter(INT16 Koeff0, INT16 Koeff1, const INT16 arraySamples[], INT32 *Magnitude0, INT32 *Magnitude1, UINT32 COUNT)
+static void goertzel_filter(int16_t Koeff0, int16_t Koeff1, const int16_t arraySamples[], int32_t *Magnitude0, int32_t *Magnitude1, uint32_t COUNT)
 {
-    INT32 Temp0, Temp1;
-    UINT16 ii;
+    int32_t Temp0, Temp1;
+    uint16_t ii;
     // Vk1_0    prev (first frequency)
     // Vk2_0    prev_prev (first frequency)
     //
     // Vk1_1    prev (second frequency)
     // Vk2_0    prev_prev (second frequency)
-    INT32 Vk1_0 = 0, Vk2_0 = 0, Vk1_1 = 0, Vk2_1 = 0;
+    int32_t Vk1_0 = 0, Vk2_0 = 0, Vk1_1 = 0, Vk2_1 = 0;
 
     // Iterate over all the input samples
     // For each sample, process the two frequencies we're interested in:
@@ -68,10 +68,10 @@ static void goertzel_filter(INT16 Koeff0, INT16 Koeff1, const INT16 arraySamples
                                   Vk2_1 >>= 10;
     Temp0 = MPY48SR(Koeff0, Vk1_0 << 1),
     Temp1 = MPY48SR(Koeff1, Vk1_1 << 1);
-    Temp0 = (INT16)Temp0 * (INT16)Vk2_0,
-    Temp1 = (INT16)Temp1 * (INT16)Vk2_1;
-    Temp0 = (INT16)Vk1_0 * (INT16)Vk1_0 + (INT16)Vk2_0 * (INT16)Vk2_0 - Temp0;
-    Temp1 = (INT16)Vk1_1 * (INT16)Vk1_1 + (INT16)Vk2_1 * (INT16)Vk2_1 - Temp1;
+    Temp0 = (int16_t)Temp0 * (int16_t)Vk2_0,
+    Temp1 = (int16_t)Temp1 * (int16_t)Vk2_1;
+    Temp0 = (int16_t)Vk1_0 * (int16_t)Vk1_0 + (int16_t)Vk2_0 * (int16_t)Vk2_0 - Temp0;
+    Temp1 = (int16_t)Vk1_1 * (int16_t)Vk1_1 + (int16_t)Vk2_1 * (int16_t)Vk2_1 - Temp1;
     *Magnitude0 = Temp0,
      *Magnitude1 = Temp1;
     return;
@@ -85,9 +85,9 @@ static void goertzel_filter(INT16 Koeff0, INT16 Koeff1, const INT16 arraySamples
 //
 // This function is used for normalization. TODO: how exactly does it work?
 // Result is highest non-zero bit position
-static inline INT16 norm_l(INT32 L_var1)
+static inline int16_t norm_l(int32_t L_var1)
 {
-    INT16 var_out;
+    int16_t var_out;
     
     if (L_var1 == 0)
     {
@@ -95,7 +95,7 @@ static inline INT16 norm_l(INT32 L_var1)
     }
     else
     {
-        if (L_var1 == (INT32)0xffffffff)
+        if (L_var1 == (int32_t)0xffffffff)
         {
             var_out = 31;
         }
@@ -106,7 +106,7 @@ static inline INT16 norm_l(INT32 L_var1)
                 L_var1 = ~L_var1;
             }
 
-            for(var_out = 0; L_var1 < (INT32)0x40000000; var_out++)
+            for(var_out = 0; L_var1 < (int32_t)0x40000000; var_out++)
             {
                 L_var1 <<= 1;
             }
@@ -119,7 +119,7 @@ static inline INT16 norm_l(INT32 L_var1)
 // These coefficients include the 8 DTMF frequencies plus 10 harmonics.
 static const unsigned COEFF_NUMBER=18;
 
-const UINT32 DtmfDetectorInterface::NUMBER_OF_BUTTONS;
+const uint32_t DtmfDetectorInterface::NUMBER_OF_BUTTONS;
 
 // These frequencies are slightly different to what is in the generator.
 // More importantly, they are also different to what is described at:
@@ -132,7 +132,7 @@ const UINT32 DtmfDetectorInterface::NUMBER_OF_BUTTONS;
 // It seems this is done to simplify harmonic detection.  
 //
 // A fixed-size array to hold the coefficients
-const INT16 CONSTANTS[COEFF_NUMBER] = {
+const int16_t CONSTANTS[COEFF_NUMBER] = {
     27860,  // 0: 706Hz, harmonics include: 78Hz, 235Hz, 3592Hz 
     26745,  // 1: 784Hz, apparently a high G, harmonics: 78Hz
     25529,  // 2: 863Hz, harmonics: 78Hz 
@@ -186,21 +186,21 @@ const INT16 CONSTANTS[COEFF_NUMBER] = {
     -30555  // 3529Hz, 3*1176Hz, 5*706Hz
 };
 
-const INT32 powerThreshold = 328;
-const INT32 dialTonesToOhersTones = 16;
-const INT32 dialTonesToOhersDialTones = 6;
-const INT32 SAMPLES = 102; // 102;
+const int32_t powerThreshold = 328;
+const int32_t dialTonesToOhersTones = 16;
+const int32_t dialTonesToOhersDialTones = 6;
+const int32_t SAMPLES = 102; // 102;
 
-static char DTMF_detection(const INT16 short_array_samples[]);
+static char DTMF_detection(const int16_t short_array_samples[]);
 
 //--------------------------------------------------------------------
-DtmfDetector::DtmfDetector(INT32 frameSize_): frameSize(frameSize_)
+DtmfDetector::DtmfDetector(int32_t frameSize_): frameSize(frameSize_)
 {
     // 
     // This array is padded to keep the last batch, which is smaller
     // than SAMPLES, from the previous call to dtmfDetecting.
     //
-    pArraySamples = new INT16 [frameSize + SAMPLES];
+    pArraySamples = new int16_t [frameSize + SAMPLES];
 
     frameCount = 0;
     prevDialButton = ' ';
@@ -211,7 +211,7 @@ DtmfDetector::~DtmfDetector()
     delete [] pArraySamples;
 }
 
-void DtmfDetector::dtmfDetecting(const INT16 input_array[])
+void DtmfDetector::dtmfDetecting(const int16_t input_array[])
 {
     // Copy the input array into the middle of pArraySamples.
     // I think the first frameCount samples contain the last batch from the
@@ -228,7 +228,7 @@ void DtmfDetector::dtmfDetecting(const INT16 input_array[])
     if(frameCount < SAMPLES) return;
     
     // Read index into pArraySamples that corresponds to the current batch.
-    UINT32 temp_index = 0;
+    uint32_t temp_index = 0;
     // Process samples while we still have enough for an entire
     // batch.
     while(frameCount >= SAMPLES)
@@ -271,14 +271,14 @@ void DtmfDetector::dtmfDetecting(const INT16 input_array[])
 
 //-----------------------------------------------------------------
 // Detect a tone in a single batch of samples (SAMPLES elements).
-char DTMF_detection(const INT16 short_array_samples[])
+char DTMF_detection(const int16_t short_array_samples[])
 {
     // The magnitude of each coefficient in the current frame.  Populated
     // by goertzel_filter
-    INT32 T[COEFF_NUMBER];
+    int32_t T[COEFF_NUMBER];
     
     // An array of size SAMPLES.  Used as input to the Goertzel function.
-    INT16 internalArray[SAMPLES];
+    int16_t internalArray[SAMPLES];
     
     char return_value=' ';
     unsigned ii;
@@ -289,7 +289,7 @@ char DTMF_detection(const INT16 short_array_samples[])
 
     {
       // Quick check for silence by calculate average magnitude
-      INT32 Sum = 0;
+      int32_t Sum = 0;
       for(ii = 0; ii < SAMPLES; ii ++)
       {
           Sum += abs(short_array_samples[ii]);
@@ -307,10 +307,10 @@ char DTMF_detection(const INT16 short_array_samples[])
     {
       // Iterate over each sample.
       // First, adjusting Dial to an appropriate value for the batch.
-      INT32 Dial = 32;
+      int32_t Dial = 32;
       for(ii = 0; ii < SAMPLES; ii++)
       {
-          INT32 sample32 = static_cast<INT32>(short_array_samples[ii]);
+          int32_t sample32 = static_cast<int32_t>(short_array_samples[ii]);
           if(sample32 != 0)
           {
               if(Dial > norm_l(sample32))
@@ -325,8 +325,8 @@ char DTMF_detection(const INT16 short_array_samples[])
       // Next, utilize Dial for scaling and populate internalArray.
       for(ii = 0; ii < SAMPLES; ii++)
       {
-          INT32 sample32 = short_array_samples[ii];
-          internalArray[ii] = static_cast<INT16>(sample32 << Dial);
+          int32_t sample32 = short_array_samples[ii];
+          internalArray[ii] = static_cast<int16_t>(sample32 << Dial);
       }
     }
 
@@ -347,8 +347,8 @@ char DTMF_detection(const INT16 short_array_samples[])
     printf("\n");
 #endif
 
-    INT32 Row = 0;
-    INT32 Temp = 0;
+    int32_t Row = 0;
+    int32_t Temp = 0;
     // Row      Index of the maximum row frequency in T
     // Temp     The frequency at the maximum row/column (gets reused 
     //          below).
@@ -363,7 +363,7 @@ char DTMF_detection(const INT16 short_array_samples[])
     }
 
     // Column   Index of the maximum column frequency in T
-    INT32 Column = 4;
+    int32_t Column = 4;
     Temp = 0;
     //Find max column(high frequences) tones
     for(int ii = 4; ii < 8; ii++)
@@ -375,7 +375,7 @@ char DTMF_detection(const INT16 short_array_samples[])
         }
     }
 
-    INT32 Sum = 0;
+    int32_t Sum = 0;
     //Find average value dial tones without max row and max column
     for(ii = 0; ii < 10; ii++)
     {
