@@ -172,7 +172,7 @@ main(int argc, char **argv)
         
         // detector.zerosIndexDialButton();
         detector.dtmfDetecting(sbuf, BUFLEN);
-        cout << detector.getDialButtonsArray() << "'" << endl;
+        cout << detector.GetResult() << "'" << endl;
     }
 
     fin.close();

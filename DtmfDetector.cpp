@@ -33,7 +33,7 @@ static inline int32_t MPY48SR(int16_t o16, int32_t o32)
 // Magnitude0       Detected magnitude of the first frequency.
 // Magnitude1       Detected magnitude of the second frequency.
 // COUNT            The number of elements in arraySamples.  Always equal to
-//                  SAMPLES in practice.
+//                  DTMF_DETECTION_BATCH_SIZE in practice.
 static void goertzel_filter(int16_t Koeff0, int16_t Koeff1, const int16_t arraySamples[], int32_t *Magnitude0, int32_t *Magnitude1, uint32_t COUNT)
 {
     int32_t Temp0, Temp1;
@@ -120,8 +120,6 @@ static inline int16_t norm_l(int32_t L_var1)
 // These coefficients include the 8 DTMF frequencies plus 10 harmonics.
 static const unsigned COEFF_NUMBER=18;
 
-const uint32_t DtmfDetectorInterface::NUMBER_OF_BUTTONS;
-
 // These frequencies are slightly different to what is in the generator.
 // More importantly, they are also different to what is described at:
 // http://en.wikipedia.org/wiki/Dual-tone_multi-frequency_signaling
@@ -190,77 +188,67 @@ const int16_t CONSTANTS[COEFF_NUMBER] = {
 const int32_t powerThreshold = 328;
 const int32_t dialTonesToOhersTones = 16;
 const int32_t dialTonesToOhersDialTones = 6;
-const int32_t SAMPLES = 102;
 
 static char DTMF_detection(const int16_t short_array_samples[]);
 
 //--------------------------------------------------------------------
-DtmfDetector::DtmfDetector()
+DtmfDetectorBase::DtmfDetectorBase()
 {
-    // 
-    // This array is padded to keep the last batch, which is smaller
-    // than SAMPLES, from the previous call to dtmfDetecting.
-    //
-    pArraySamples = new int16_t [SAMPLES];
-
     frameCount = 0;
     prevDialButton = ' ';
 }
 //---------------------------------------------------------------------
-DtmfDetector::~DtmfDetector()
+DtmfDetectorBase::~DtmfDetectorBase()
 {
-    delete [] pArraySamples;
 }
 
-void DtmfDetector::dtmfDetecting(const int16_t *samples, int sample_count)
+void DtmfDetectorBase::dtmfDetecting(const int16_t *samples, int sample_count)
 {
     if (frameCount != 0) {
         // Copy the input array into the back of pArraySamples.
-        int count_to_copy = std::min(sample_count, SAMPLES - frameCount);
+        int count_to_copy = std::min(sample_count, DTMF_DETECTION_BATCH_SIZE - frameCount);
         std::copy(samples, samples + count_to_copy, pArraySamples + frameCount);
         frameCount += count_to_copy;
         samples += count_to_copy;
         sample_count -= count_to_copy;
-        if (sample_count < SAMPLES) {
+        if (sample_count < DTMF_DETECTION_BATCH_SIZE) {
           return;
         }
     }
 
     // process batch samples in buffer
-    if (frameCount == SAMPLES) {
+    if (frameCount == DTMF_DETECTION_BATCH_SIZE) {
         char dial_char = DTMF_detection(pArraySamples);
         OnDetectedTone(dial_char);
         frameCount = 0;
     }
 
     // process samples in input data directory
-    while (sample_count >= SAMPLES)
+    while (sample_count >= DTMF_DETECTION_BATCH_SIZE)
     {
         // Determine the tone present in the current batch
         char dial_char = DTMF_detection(samples);
         OnDetectedTone(dial_char);
 
-        samples += SAMPLES;
-        sample_count -= SAMPLES;
+        samples += DTMF_DETECTION_BATCH_SIZE;
+        sample_count -= DTMF_DETECTION_BATCH_SIZE;
     }
 
     // We have sample_count samples left to process, but it's not enough for an entire batch. 
     // Store the samples to the buffer and deal with them
     // next time this function is called.
-    assert(frameCount == 0 && sample_count < SAMPLES);
+    assert(frameCount == 0 && sample_count < DTMF_DETECTION_BATCH_SIZE);
     std::copy(samples, samples + sample_count, pArraySamples);
     frameCount = sample_count;
 }
 
-void DtmfDetector::OnDetectedTone(char dial_char) {
+void DtmfDetectorBase::OnDetectedTone(char dial_char) {
   // Determine if we should register it as a new tone, or
   // ignore it as a continuation of a previously 
   // registered tone.  
 
   if (dial_char != prevDialButton) {
-    if (dial_char != ' ') dialButtons[indexForDialButtons++] = dial_char;
-    // NUL-terminate the string.
-    dialButtons[indexForDialButtons] = 0;
+    if (dial_char != ' ') OnNewTone(dial_char);
   }
 
   // Store the current tone.  In light of the above
@@ -271,15 +259,15 @@ void DtmfDetector::OnDetectedTone(char dial_char) {
 }
 
 //-----------------------------------------------------------------
-// Detect a tone in a single batch of samples (SAMPLES elements).
+// Detect a tone in a single batch of samples (DTMF_DETECTION_BATCH_SIZE elements).
 char DTMF_detection(const int16_t short_array_samples[])
 {
     // The magnitude of each coefficient in the current frame.  Populated
     // by goertzel_filter
     int32_t T[COEFF_NUMBER];
     
-    // An array of size SAMPLES.  Used as input to the Goertzel function.
-    int16_t internalArray[SAMPLES];
+    // An array of size DTMF_DETECTION_BATCH_SIZE.  Used as input to the Goertzel function.
+    int16_t internalArray[DTMF_DETECTION_BATCH_SIZE];
     
     char return_value=' ';
     unsigned ii;
@@ -291,7 +279,7 @@ char DTMF_detection(const int16_t short_array_samples[])
     {
       // Quick check for silence by calculate average magnitude
       int32_t Sum = 0;
-      for(ii = 0; ii < SAMPLES; ii ++)
+      for(ii = 0; ii < DTMF_DETECTION_BATCH_SIZE; ii ++)
       {
           Sum += abs(short_array_samples[ii]);
           //if(short_array_samples[ii] >= 0)
@@ -299,7 +287,7 @@ char DTMF_detection(const int16_t short_array_samples[])
           //else
           //    Sum -= short_array_samples[ii];
       }
-      Sum /= SAMPLES;
+      Sum /= DTMF_DETECTION_BATCH_SIZE;
       if(Sum < powerThreshold)
           return ' ';
     }
@@ -309,7 +297,7 @@ char DTMF_detection(const int16_t short_array_samples[])
       // Iterate over each sample.
       // First, adjusting Dial to an appropriate value for the batch.
       int32_t Dial = 32;
-      for(ii = 0; ii < SAMPLES; ii++)
+      for(ii = 0; ii < DTMF_DETECTION_BATCH_SIZE; ii++)
       {
           int32_t sample32 = static_cast<int32_t>(short_array_samples[ii]);
           if(sample32 != 0)
@@ -324,7 +312,7 @@ char DTMF_detection(const int16_t short_array_samples[])
       Dial -= 16;
 
       // Next, utilize Dial for scaling and populate internalArray.
-      for(ii = 0; ii < SAMPLES; ii++)
+      for(ii = 0; ii < DTMF_DETECTION_BATCH_SIZE; ii++)
       {
           int32_t sample32 = short_array_samples[ii];
           internalArray[ii] = static_cast<int16_t>(sample32 << Dial);
@@ -332,15 +320,15 @@ char DTMF_detection(const int16_t short_array_samples[])
     }
 
     //Frequency detection
-    goertzel_filter(CONSTANTS[0], CONSTANTS[1], internalArray, &T[0], &T[1], SAMPLES);
-    goertzel_filter(CONSTANTS[2], CONSTANTS[3], internalArray, &T[2], &T[3], SAMPLES);
-    goertzel_filter(CONSTANTS[4], CONSTANTS[5], internalArray, &T[4], &T[5], SAMPLES);
-    goertzel_filter(CONSTANTS[6], CONSTANTS[7], internalArray, &T[6], &T[7], SAMPLES);
-    goertzel_filter(CONSTANTS[8], CONSTANTS[9], internalArray, &T[8], &T[9], SAMPLES);
-    goertzel_filter(CONSTANTS[10], CONSTANTS[11], internalArray, &T[10], &T[11], SAMPLES);
-    goertzel_filter(CONSTANTS[12], CONSTANTS[13], internalArray, &T[12], &T[13], SAMPLES);
-    goertzel_filter(CONSTANTS[14], CONSTANTS[15], internalArray, &T[14], &T[15], SAMPLES);
-    goertzel_filter(CONSTANTS[16], CONSTANTS[17], internalArray, &T[16], &T[17], SAMPLES);
+    goertzel_filter(CONSTANTS[0], CONSTANTS[1], internalArray, &T[0], &T[1], DTMF_DETECTION_BATCH_SIZE);
+    goertzel_filter(CONSTANTS[2], CONSTANTS[3], internalArray, &T[2], &T[3], DTMF_DETECTION_BATCH_SIZE);
+    goertzel_filter(CONSTANTS[4], CONSTANTS[5], internalArray, &T[4], &T[5], DTMF_DETECTION_BATCH_SIZE);
+    goertzel_filter(CONSTANTS[6], CONSTANTS[7], internalArray, &T[6], &T[7], DTMF_DETECTION_BATCH_SIZE);
+    goertzel_filter(CONSTANTS[8], CONSTANTS[9], internalArray, &T[8], &T[9], DTMF_DETECTION_BATCH_SIZE);
+    goertzel_filter(CONSTANTS[10], CONSTANTS[11], internalArray, &T[10], &T[11], DTMF_DETECTION_BATCH_SIZE);
+    goertzel_filter(CONSTANTS[12], CONSTANTS[13], internalArray, &T[12], &T[13], DTMF_DETECTION_BATCH_SIZE);
+    goertzel_filter(CONSTANTS[14], CONSTANTS[15], internalArray, &T[14], &T[15], DTMF_DETECTION_BATCH_SIZE);
+    goertzel_filter(CONSTANTS[16], CONSTANTS[17], internalArray, &T[16], &T[17], DTMF_DETECTION_BATCH_SIZE);
 
 #if DEBUG
     for (ii = 0; ii < COEFF_NUMBER; ++ii)

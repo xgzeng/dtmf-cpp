@@ -5,75 +5,58 @@
  * All rights reserved.
  */
 
-
 #ifndef DTMF_DETECTOR
 #define DTMF_DETECTOR
 
 #include <cstdint>
+#include <string>
+
+const int DTMF_DETECTION_BATCH_SIZE = 102;
 
 // DTMF detector object
-
-// N.B. Not sure why this interface is necessary, as the only class to 
-// implement it is the DtmfDetector.
-class DtmfDetectorInterface
-{
-public:
-    // The maximum number of detected tones
-    static const uint32_t NUMBER_OF_BUTTONS = 65;
-    // A fixed-size array to store the detected tones.  The array is
-    // NUL-terminated.
-    char dialButtons[NUMBER_OF_BUTTONS];
-    // A constant pointer to expose dialButtons for read-only access
-    char *const pDialButtons;
-    // The number of tones detected (stored in dialButtons)
-    int16_t indexForDialButtons;
-
-public:
-    int32_t getIndexDialButtons() // The number of detected push buttons, max number = 64
-    const
-    {
-        return indexForDialButtons;
-    }
-    char *getDialButtonsArray() // Address of array, where store detected push buttons
-    const
-    {
-        return pDialButtons;
-    }
-    void zerosIndexDialButton() // Zeros of a detected button array
-    {
-        indexForDialButtons = 0;
-    }
-
-    DtmfDetectorInterface():indexForDialButtons(0), pDialButtons(dialButtons)
-    {
-        dialButtons[0] = 0;
-    }
-};
-
-class DtmfDetector : public DtmfDetectorInterface
+class DtmfDetectorBase 
 {
 private:
-    // This array keeps the entire buffer PLUS a single batch.
-    int16_t *pArraySamples;
+  // This array keeps the entire buffer PLUS a single batch.
+  int16_t pArraySamples[DTMF_DETECTION_BATCH_SIZE];
 
-    // This gets used for a variety of purposes.  Most notably, it indicates
-    // the start of the circular buffer at the start of ::dtmfDetecting.
-    int32_t frameCount;
+  // This gets used for a variety of purposes.  Most notably, it indicates
+  // the start of the circular buffer at the start of ::dtmfDetecting.
+  int32_t frameCount;
 
-    // The tone detected by the previous call to DTMF_detection.
-    char prevDialButton;
+  // The tone detected by the previous call to DTMF_detection.
+  char prevDialButton;
+
+  void OnDetectedTone(char dial_char);
 
 protected:
-
-    virtual void OnDetectedTone(char dial_char);
+  virtual void OnNewTone(char dial_char) = 0;
 
 public:
-    DtmfDetector();
-    ~DtmfDetector();
+  DtmfDetectorBase();
+  ~DtmfDetectorBase();
 
-    void dtmfDetecting(const int16_t *input_samples, int sample_count); // The DTMF detection.
-    // The size of a inputFrame must be equal of a frameSize_, who
-    // was set in constructor.
+  void dtmfDetecting(const int16_t *input_samples, int sample_count);
 };
+
+class DtmfDetector : public DtmfDetectorBase
+{
+public:
+  const std::string& GetResult() const {
+    return detected_dial;
+  }
+
+  void ClearResult() {
+    detected_dial.clear();
+  }
+
+private:
+  std::string detected_dial;
+
+  void OnNewTone(char dial_char) override {
+    detected_dial += dial_char;
+  }
+};
+
 
 #endif
